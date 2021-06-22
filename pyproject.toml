@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "decaturmakers-glue"
+version = "0.1.0"
+description = ""
+authors = ["Evan Goode <mail@evangoo.de>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+Flask = "^2.0.1"
+requests = "^2.25.1"
+Flask-HTTPAuth = "^4.4.0"
+APScheduler = "^3.7.0"
+python-dotenv = "^0.18.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

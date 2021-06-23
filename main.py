@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 
 import atexit
+import queue
 import os
 import datetime
 from typing import Any, Dict, List, Generator, Optional, Tuple
 import sys
 import json
+from threading import Thread
 
 from apscheduler.schedulers.background import BackgroundScheduler
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
-from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+import gspread
+import requests
 
 load_dotenv()
 
 RFID_TOKENS = [token for token in os.getenv("RFID_TOKENS", "").split(" ") if token]
+
+RFID_SHEET_URL = os.getenv("RFID_SHEET_URL")
+RFID_SHEET_WORKSHEET = "All Attempts"
 
 NEON_USERNAME = "neoncrm"
 NEON_PASSWORD = os.getenv("NEON_PASSWORD")
@@ -32,6 +38,11 @@ NEON_MAX_PAGE_SIZE = 200
 
 NEON_API_ENDPOINT = "https://api.neoncrm.com/v2"
 
+
+# See https://developers.google.com/identity/protocols/oauth2/service-account#creatinganaccount
+gc = gspread.service_account(filename="./service_account.json")
+rfid_sheet = gc.open_by_url(RFID_SHEET_URL)
+rfid_log_worksheet = rfid_sheet.worksheet(RFID_SHEET_WORKSHEET)
 
 neon_session = requests.session()
 retry_strategy = Retry(
@@ -155,11 +166,47 @@ def rfid_verify_token(token):
         return token
 
 
-@app.route("/rfid/authenticate")
+rfid_log_queue = queue.Queue()
+
+
+def rfid_log_worker():
+    while True:
+        [timestamp, fob, rfid_reader_id, is_authorized] = rfid_log_queue.get()
+
+        timestamp_str = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        rfid_log_worksheet.append_row(
+            [timestamp_str, fob, rfid_reader_id, is_authorized]
+        )
+
+        month = timestamp.strftime("%b %Y")
+        month_report_worksheet_name = f"{month} Report"
+        try:
+            rfid_sheet.worksheet(month_report_worksheet_name)
+        except gspread.exceptions.WorksheetNotFound:
+            month_report_template_name = "Month Report Template"
+            report_template_worksheet = rfid_sheet.worksheet(month_report_template_name)
+            month_report_worksheet = report_template_worksheet.duplicate(
+                new_sheet_name=month_report_worksheet_name
+            )
+            month_report_worksheet.update("A1", month)
+            
+        rfid_log_queue.task_done()
+
+
+Thread(target=rfid_log_worker, daemon=True).start()
+
+
+@app.route("/rfid/auth")
 @rfid_auth.login_required
 def rfid_authorized_fobs():
     fob = request.args.get("fob")
-    return {"is_authorized": fob in authorized_fobs, "authorized_fobs": authorized_fobs}
+    rfid_reader_id = "front-door"
+    is_authorized = fob in authorized_fobs if authorized_fobs else None
+    timestamp = datetime.datetime.now()
+
+    rfid_log_queue.put([timestamp, fob, rfid_reader_id, is_authorized])
+
+    return {"is_authorized": is_authorized, "authorized_fobs": authorized_fobs}
 
 
 if __name__ == "__main__":
@@ -168,6 +215,7 @@ if __name__ == "__main__":
         next_run_time=datetime.datetime.now(),
         trigger="interval",
         seconds=60,
+        coalesce=True,
     )
     scheduler.start()
     atexit.register(lambda: scheduler.shutdown())

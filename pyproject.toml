@@ -11,6 +11,7 @@ requests = "^2.25.1"
 Flask-HTTPAuth = "^4.4.0"
 APScheduler = "^3.7.0"
 python-dotenv = "^0.18.0"
+gspread = "^3.7.0"
 
 [tool.poetry.dev-dependencies]
 

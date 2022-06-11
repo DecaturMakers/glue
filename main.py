@@ -43,10 +43,15 @@ CHECKR_PACKAGE = os.getenv("CHECKR_PACKAGE")
 # Tools or areas which require RFID authentication/authorization are called
 # "zones" here. This dict specifies which custom fields a user must have
 # checked in NeonCRM to be granted access to each zone. For example, access to
-# the "front-door" zone requires only the "COVID traning" field be checked on
+# the "front-door" zone used to require the "COVID traning" field be checked on
 # the user's account.
+# ZONE_REQUIREMENTS = {
+#     "front-door": frozenset(("COVID training",)),
+# }
+
+# No longer checking the "COVID training" checkbox
 ZONE_REQUIREMENTS = {
-    "front-door": frozenset(("COVID training",)),
+    "front-door": frozenset(),
 }
 
 # END CONFIGURABLE OPTIONS
@@ -150,7 +155,8 @@ def neon_get_fields() -> Dict[str, NeonField]:
     field_ids: Dict[str, NeonField] = {}
     for field in custom_fields_res.json():
         neon_options: Dict[str, NeonOption] = {}
-        for option in field.get("optionValues", []):
+        option_values = field.get("optionValues") or []
+        for option in option_values:
             neon_options[option["name"]] = NeonOption(option["name"], option["id"])
         neon_field = NeonField(field["name"], int(field["id"]), neon_options)
         field_ids[field["name"]] = neon_field
@@ -344,7 +350,6 @@ def gen_users() -> Generator[User, None, None]:
     while current_page <= last_page:
         last_page, results = get_page(current_page)
         for result in results:
-            # print(result)
             zones = frozenset(
                 zone for zone in ZONE_REQUIREMENTS if can_access(result, zone)
             )

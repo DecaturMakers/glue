@@ -1,7 +1,7 @@
 with import <nixpkgs>{};
 
 let
-  pkgs = import (fetchTarball("channel:nixpkgs-unstable")) {};
+  pkgs = import (fetchTarball("https://github.com/NixOS/nixpkgs/archive/nixos-22.11.tar.gz")) {};
 
 in pkgs.mkShell {
   nativeBuildInputs = let
@@ -9,9 +9,10 @@ in pkgs.mkShell {
       poetry
     ];
   in with pkgs; [
-    (python310.withPackages env)
+    (python39.withPackages env)
   ];
   buildInputs = [
+    pkgs.poetry
     pkgs.google-cloud-sdk
   ];
 }

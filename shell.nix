@@ -9,7 +9,7 @@ in pkgs.mkShell {
       poetry
     ];
   in with pkgs; [
-    (python39.withPackages env)
+    (python310.withPackages env)
   ];
   buildInputs = [
     pkgs.poetry

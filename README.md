@@ -11,6 +11,8 @@ The service is dockerized and deployed to Google Cloud via Cloud Run.
 
 ## Building and deploying
 
+Commits to the master branch should trigger an automatic deployment to Cloud Run via GitHub Actions.
+
 The following environment variables need to be set in Google Cloud. See also `example.env`:
 
 - `NEON_PASSWORD`: the password used by NeonCRM when calling the "glue" server via a webhook. The username should be "neoncrm". This password can be set here: [https://decaturmakers.app.neoncrm.com/np/admin/systemsetting/webhook/webHookList.jsp](https://decaturmakers.app.neoncrm.com/np/admin/systemsetting/webhook/webHookList.jsp).
@@ -20,13 +22,23 @@ The following environment variables need to be set in Google Cloud. See also `ex
 - `CHECKR_API_KEY`: configured here: [https://dashboard.checkr.com/account/developer_settings](https://dashboard.checkr.com/account/developer_settings)
 - `CHECKR_PACKAGE`: the slug of the "package" used for background checks, e.g. `driver_pro` or `pro_criminal`.
 
-You'll also need a `rfid-sheet-service-account.json` for the service account that has access to the "Space Access Reports" Google sheet, currently rfid-260@glue-317617.iam.gserviceaccount.com. Ask evan@decaturmakers.org for this file, or create a new one by going to the "glue" project on Google Cloud -> IAM & Admin -> Service Accounts -> rfid-260@glue-317617.iam.gserviceaccount.com -> Keys -> Add Key -> Create New Key, select JSON, and hit Create.
+## To run manually:
 
-## To build and deploy a new version:
+1. Create `rfid-sheet-service-account.json` at the root of the repository. This file allows the glue server access to the "Space Access Reports" Google sheet as the service account `rfid-260@glue-317617.iam.gserviceaccount.com`. The content of this file should be the JSON data stored in the `RFID_SHEET_SERVICE_ACCOUNT_JSON` secret on this repository: https://github.com/DecaturMakers/glue/settings/secrets/actions. If the secret is missing, you can get a new JSON file by going to the "glue" project on Google Cloud -> IAM & Admin -> Service Accounts -> rfid-260@glue-317617.iam.gserviceaccount.com -> Keys -> Add Key -> Create New Key, select JSON, and hit Create.
 
-The environment variables should already be set in Google Cloud, but the `rfid-sheet-service-account.json` needs to be available while building the container. See above if you don't have this file.
+2. Create a file named `.env` at the root of the repository, following the format of `example.env`. Look in Cloud Run for the correct values of the environment variables.
 
+3. ```
+   poetry shell
+   poetry install
+   python3 main.py
+   ```
+   
+### To build and deploy manually:
+
+`rfid-sheet-service-account.json` needs to be available while building the container. See above if you don't have this file.
 ```
+export GCLOUD_PROJECT_ID=glue-317617
 docker build -t gcr.io/$GCLOUD_PROJECT_ID/glue .
 docker push gcr.io/$GCLOUD_PROJECT_ID/glue
 gcloud run deploy glue --image gcr.io/$GCLOUD_PROJECT_ID/glue:latest --region=us-east1 --project=$GCLOUD_PROJECT_ID

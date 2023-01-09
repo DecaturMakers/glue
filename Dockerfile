@@ -6,7 +6,7 @@ RUN pip install poetry
 
 WORKDIR /app
 
-COPY service_account.json ./
+COPY rfid-sheet-service-account.json ./
 
 COPY poetry.lock pyproject.toml ./
 

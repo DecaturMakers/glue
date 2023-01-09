@@ -20,11 +20,11 @@ The following environment variables need to be set in Google Cloud. See also `ex
 - `CHECKR_API_KEY`: configured here: [https://dashboard.checkr.com/account/developer_settings](https://dashboard.checkr.com/account/developer_settings)
 - `CHECKR_PACKAGE`: the slug of the "package" used for background checks, e.g. `driver_pro` or `pro_criminal`.
 
-You'll also need a `service_account.json` for the service account that has access to the "Space Access Reports" Google sheet, currently rfid-260@glue-317617.iam.gserviceaccount.com. Ask evan@decaturmakers.org for this file, or create a new one by going to the "glue" project on Google Cloud -> IAM & Admin -> Service Accounts -> rfid-260@glue-317617.iam.gserviceaccount.com -> Keys -> Add Key -> Create New Key, select JSON, and hit Create.
+You'll also need a `rfid-sheet-service-account.json` for the service account that has access to the "Space Access Reports" Google sheet, currently rfid-260@glue-317617.iam.gserviceaccount.com. Ask evan@decaturmakers.org for this file, or create a new one by going to the "glue" project on Google Cloud -> IAM & Admin -> Service Accounts -> rfid-260@glue-317617.iam.gserviceaccount.com -> Keys -> Add Key -> Create New Key, select JSON, and hit Create.
 
 ## To build and deploy a new version:
 
-The environment variables should already be set in Google Cloud, but the `service_account.json` needs to be available while building the container. See above if you don't have this file.
+The environment variables should already be set in Google Cloud, but the `rfid-sheet-service-account.json` needs to be available while building the container. See above if you don't have this file.
 
 ```
 docker build -t gcr.io/$GCLOUD_PROJECT_ID/glue .

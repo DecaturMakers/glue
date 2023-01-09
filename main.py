@@ -85,7 +85,7 @@ CHECKR_PER_PAGE = 100
 #     "cloudidentity", "v1", credentials=google_credentials
 # )
 
-gc = gspread.service_account(filename="./service_account.json")
+gc = gspread.service_account(filename="./rfid-sheet-service-account.json")
 rfid_sheet = gc.open_by_url(RFID_SHEET_URL)
 
 retry_adapter = HTTPAdapter(max_retries=3)
@@ -414,7 +414,7 @@ def update_users() -> None:
                 try:
                     checkr_send_invite(user)
                 except (
-                    requests.HTTPError,
+                    requests.exceptions.HTTPError,
                     requests.exceptions.ConnectionError,
                     KeyError,
                 ) as e:

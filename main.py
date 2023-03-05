@@ -538,7 +538,7 @@ def rfid_verify_token(token: str) -> Optional[str]:
 @rfid_auth.login_required
 def rfid_authenticate() -> Any:
     fob = request.args.get("fob")
-    zone = "front-door"
+    zone = request.args.get("zone", "front-door")
     name: Optional[str] = None
     if not are_users_known:
         is_authorized = None

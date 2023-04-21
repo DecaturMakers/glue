@@ -52,6 +52,7 @@ CHECKR_PACKAGE = os.getenv("CHECKR_PACKAGE")
 # No longer checking the "COVID training" checkbox
 ZONE_REQUIREMENTS = {
     "front-door": frozenset(),
+    "side-door": frozenset(),
 }
 
 # END CONFIGURABLE OPTIONS

@@ -175,7 +175,6 @@ def neon_set_checkbox(user: User, field_name: str, checked: bool) -> None:
             {
                 "id": neon_option.option_id,
                 "name": neon_option.name,
-                "status": "ACTIVE",
             }
         ]
         value = neon_option.name
@@ -192,10 +191,9 @@ def neon_set_checkbox(user: User, field_name: str, checked: bool) -> None:
                 "accountCustomFields": [
                     {
                         "id": neon_field.field_id,
-                        "name": field_name,
-                        "status": "ACTIVE",
-                        "optionValues": option_values,
                         "value": value,
+                        "name": field_name,
+                        "optionValues": option_values,
                     }
                 ],
             }
@@ -400,13 +398,18 @@ def update_users() -> None:
     logging.info("Updating users")
     try:
         users = list(gen_users())
-        users_by_fob = {}
-        users_by_email = {}
+
+        # Sanity check: if no users were found, consider the response invalid
+        if not users:
+            raise ValueError("Got an empty list of users from NeonCRM!")
+
+        new_users_by_email = {}
+        new_users_by_fob = {}
         for user in users:
             if user.email is not None:
-                users_by_email[user.email] = user
+                new_users_by_email[user.email] = user
             if user.fob is not None:
-                users_by_fob[user.fob] = user
+                new_users_by_fob[user.fob] = user
             if (
                 not user.invited_to_checkr
                 and user.email is not None
@@ -420,6 +423,13 @@ def update_users() -> None:
                     KeyError,
                 ) as e:
                     logging.exception(f"Failed to send Checkr invite to {user.email}!")
+
+        # Sanity check: if none of the users have fobs, consider the response invalid
+        if not new_users_by_fob:
+            raise ValueError("NeonCRM sent at least one user, but none have a fob!")
+
+        users_by_email = new_users_by_email
+        users_by_fob = new_users_by_fob
         are_users_known = True
 
     except (requests.HTTPError, requests.exceptions.ConnectionError) as e:
@@ -545,6 +555,7 @@ def rfid_authenticate() -> Any:
         is_authorized = None
         authorized_fobs = None
         name = None
+        logging.warning(f"Request from fob {fob} at zone {zone}, but users are not yet known! This should not happen often! Was the server restarted recently?")
     else:
         is_authorized = fob in users_by_fob and zone in users_by_fob[fob].zones
         authorized_fobs = [

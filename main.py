@@ -130,9 +130,10 @@ def can_access(neon_result: Dict[str, str], zone: str) -> bool:
 def check_res(res: requests.Response):
     try:
         res.raise_for_status()
-    except HTTPError:
+    except requests.HTTPError:
         logging.warning(f"Error response from {res.request.url}:")
         logging.warning(res.text)
+        raise
 
 class NeonOption(NamedTuple):
     """One possible value of a "custom field" in NeonCRM"""

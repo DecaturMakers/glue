@@ -335,7 +335,12 @@ def gen_users() -> Generator[User, None, None]:
                 ],
             },
         )
-        search_res.raise_for_status()
+        try:
+            search_res.raise_for_status()
+        except HTTPError:
+            logging.warning("Error response from Neon:")
+            logging.warning(search_res.text)
+            raise
         search_dict = search_res.json()
 
         last_page = search_dict["pagination"]["totalPages"] - 1

@@ -127,6 +127,12 @@ def can_access(neon_result: Dict[str, str], zone: str) -> bool:
         return False
     return all(neon_result.get(field) for field in ZONE_REQUIREMENTS[zone])
 
+def check_res(res: requests.Response):
+    try:
+        res.raise_for_status()
+    except HTTPError:
+        logging.warning(f"Error response from {res.request.url}:")
+        logging.warning(res.text)
 
 class NeonOption(NamedTuple):
     """One possible value of a "custom field" in NeonCRM"""
@@ -152,7 +158,7 @@ def neon_get_fields() -> Dict[str, NeonField]:
         timeout=NEON_REQUEST_TIMEOUT,
         params={"category": "Account"},
     )
-    custom_fields_res.raise_for_status()
+    check_res(custom_fields_res)
     field_ids: Dict[str, NeonField] = {}
     for field in custom_fields_res.json():
         neon_options: Dict[str, NeonOption] = {}
@@ -199,7 +205,7 @@ def neon_set_checkbox(user: User, field_name: str, checked: bool) -> None:
             }
         },
     )
-    neon_response.raise_for_status()
+    check_res(neon_response)
 
 
 # def google_group_add(group_id: str, user: User) -> None:
@@ -237,7 +243,7 @@ def checkr_send_invite(user: User) -> None:
             "email": user.email,
         },
     )
-    existing_candidates_response.raise_for_status()
+    check_res(existing_candidates_response)
     existing_candidates_json = existing_candidates_response.json()
     if existing_candidates_json["count"]:
         candidate_id = existing_candidates_json["data"][0]["id"]
@@ -251,7 +257,7 @@ def checkr_send_invite(user: User) -> None:
                 "work_locations": CHECKR_WORK_LOCATIONS,
             },
         )
-        new_candidate_response.raise_for_status()
+        check_res(new_candidate_response)
         candidate_id = new_candidate_response.json()["id"]
 
     existing_invitations_response = checkr_session.get(
@@ -264,7 +270,7 @@ def checkr_send_invite(user: User) -> None:
         },
     )
 
-    existing_invitations_response.raise_for_status()
+    check_res(existing_invitations_response)
     existing_invitations_json = existing_invitations_response.json()
     if existing_invitations_json["count"]:
         logging.info(
@@ -287,7 +293,7 @@ def checkr_send_invite(user: User) -> None:
         },
     )
 
-    invitation_response.raise_for_status()
+    check_res(invitation_response)
     logging.info("Invited %s to Checkr, setting field in NeonCRM...", user.email)
 
     neon_set_checkbox(user, NEON_FIELD_NAME_CHECKR, True)
@@ -335,12 +341,7 @@ def gen_users() -> Generator[User, None, None]:
                 ],
             },
         )
-        try:
-            search_res.raise_for_status()
-        except HTTPError:
-            logging.warning("Error response from Neon:")
-            logging.warning(search_res.text)
-            raise
+        check_res(search_res)
         search_dict = search_res.json()
 
         last_page = search_dict["pagination"]["totalPages"] - 1

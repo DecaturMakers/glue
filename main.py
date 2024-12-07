@@ -29,7 +29,7 @@ load_dotenv()
 
 TIMEZONE = tz.gettz("America/New_York")
 NEON_ORG_ID = "decaturmakers"
-NEON_FIELD_NAME_FOB = "Fob10Digit"
+NEON_FIELD_NAMES_FOB = ["Fob10Digit", "FobCSV"]
 NEON_FIELD_NAME_DM_MEMBERS = "Added to dm-members"
 NEON_FIELD_NAME_CHECKR = "Invited to Checkr"
 CHECKR_WORK_LOCATIONS = [
@@ -106,7 +106,7 @@ class User(NamedTuple):
     account_id: str
     name: str
     email: Optional[str]
-    fob: Optional[str]
+    fobs: Optional[List[str]]
     zones: frozenset[str]
     is_membership_expired: bool
     added_to_dm_members: bool
@@ -127,6 +127,7 @@ def can_access(neon_result: Dict[str, str], zone: str) -> bool:
         return False
     return all(neon_result.get(field) for field in ZONE_REQUIREMENTS[zone])
 
+
 def check_res(res: requests.Response):
     try:
         res.raise_for_status()
@@ -134,6 +135,7 @@ def check_res(res: requests.Response):
         logging.warning(f"Error response from {res.request.url}:")
         logging.warning(res.text)
         raise
+
 
 class NeonOption(NamedTuple):
     """One possible value of a "custom field" in NeonCRM"""
@@ -380,11 +382,17 @@ def gen_users() -> Generator[User, None, None]:
                     )
                 else:
                     is_minor = None  # unknown whether user is a minor
+                fobs: List[str] = []
+                for fieldname in NEON_FIELD_NAMES_FOB:
+                    fobs.extend([
+                        x.strip() for x in result.get(fieldname, "").split(",")
+                        if x != ""
+                    ])
                 yield User(
                     account_id=result["Account ID"],
                     name=result["Full Name (F)"],
                     email=result["Email 1"] or None,
-                    fob=result.get(NEON_FIELD_NAME_FOB),
+                    fobs=fobs,
                     zones=zones,
                     is_membership_expired=expired,
                     is_minor=is_minor,
@@ -415,8 +423,9 @@ def update_users() -> None:
         for user in users:
             if user.email is not None:
                 new_users_by_email[user.email] = user
-            if user.fob is not None:
-                new_users_by_fob[user.fob] = user
+            if user.fobs:
+                for fob in user.fobs:
+                    new_users_by_fob[fob] = user
             if (
                 not user.invited_to_checkr
                 and user.email is not None

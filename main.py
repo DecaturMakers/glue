@@ -106,7 +106,7 @@ class User(NamedTuple):
     account_id: str
     name: str
     email: Optional[str]
-    fobs: Optional[List[str]]
+    fobs: List[str]
     zones: frozenset[str]
     is_membership_expired: bool
     added_to_dm_members: bool

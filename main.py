@@ -384,10 +384,12 @@ def gen_users() -> Generator[User, None, None]:
                     is_minor = None  # unknown whether user is a minor
                 fobs: List[str] = []
                 for fieldname in NEON_FIELD_NAMES_FOB:
-                    fobs.extend([
-                        x.strip() for x in result.get(fieldname, "").split(",")
-                        if x != ""
-                    ])
+                    for tmp in result.get(fieldname, ""):
+                        if not tmp:
+                            continue
+                        fobs.extend([
+                            x.strip() for x in tmp.split(",") if x != ""
+                        ])
                 yield User(
                     account_id=result["Account ID"],
                     name=result["Full Name (F)"],

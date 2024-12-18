@@ -16,4 +16,4 @@ RUN poetry install --no-interaction --no-ansi
 COPY . ./
 
 ENV PORT 80
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 1 main:app
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 1 --timeout 120 main:app

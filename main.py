@@ -384,7 +384,10 @@ def gen_users() -> Generator[User, None, None]:
                     is_minor = None  # unknown whether user is a minor
                 fobs: List[str] = []
                 for fieldname in NEON_FIELD_NAMES_FOB:
-                    for tmp in result.get(fieldname, ""):
+                    fval = result.get(fieldname, "")
+                    if not fval:
+                        continue
+                    for tmp in fval:
                         if not tmp:
                             continue
                         fobs.extend([

@@ -387,12 +387,10 @@ def gen_users() -> Generator[User, None, None]:
                     fval = result.get(fieldname, "")
                     if not fval:
                         continue
-                    for tmp in fval:
-                        if not tmp:
-                            continue
-                        fobs.extend([
-                            x.strip() for x in tmp.split(",") if x != ""
-                        ])
+                    for tmp in fval.split(","):
+                        tmp = tmp.strip()
+                        if tmp != "":
+                            fobs.append(tmp)
                 yield User(
                     account_id=result["Account ID"],
                     name=result["Full Name (F)"],

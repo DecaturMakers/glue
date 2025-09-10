@@ -66,7 +66,7 @@ NEON_USERNAME = "neoncrm"
 NEON_PASSWORD = os.getenv("NEON_PASSWORD")
 
 NEON_API_ENDPOINT = "https://api.neoncrm.com/v2"
-NEON_REQUEST_TIMEOUT = 10  # seconds
+NEON_REQUEST_TIMEOUT = 60  # seconds
 NEON_API_KEY = os.getenv("NEON_API_KEY")
 NEON_AUTH = (NEON_ORG_ID, NEON_API_KEY)
 
